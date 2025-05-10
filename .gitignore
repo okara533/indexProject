@@ -1,0 +1,20 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+venv/
+
+# SQLite database
+data/coindb.db
+
+# Log files
+data/logs/
+
+# OS generated files
+.DS_Store
+
+# IDE config (optional — remove if you want to share these)
+.vscode/
+.idea/
