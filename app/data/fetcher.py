@@ -10,6 +10,8 @@ load_dotenv()
 COIN_GECKO_API_KEY = os.getenv('COIN_GECKO_API_KEY')
 
 def pingCoinGeckoAPI():
+    """ Ping the CoinGecko API to check if it's up and running. """
+
     logger.info("Pinging CoinGecko API...")
     # fetch data...
     url = "https://api.coingecko.com/api/v3/ping"
@@ -31,6 +33,7 @@ def pingCoinGeckoAPI():
         logger.error(f"Error pinging CoinGecko API: {e}")
         return False
 def fetchCoinIds(page=1):
+    """ Fetch a list of Coin IDs from the CoinGecko API. """
     logger.info("Fetching Coin IDs...")
     url = "https://api.coingecko.com/api/v3/coins/markets"
     headers = {
@@ -54,6 +57,7 @@ def fetchCoinIds(page=1):
         return []
     
 def histCoinData(coin_id,vs_currency="usd",from_date=None,to_date=None):
+    """ Fetch historical Coin Data for a specific coin ID from the CoinGecko API. """
     logger.info(f"Fetching historical Coin Data for {coin_id}...")
     params={
         "vs_currency": vs_currency,
