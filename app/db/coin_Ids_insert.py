@@ -183,7 +183,7 @@ if __name__ == "__main__":
     add_created_updated_columns()
 
     if pingCoinGeckoAPI():
-        for page in range(1, 4):
+        for page in range(1, 5):
             data = fetchCoinIds(page=page)
             add_created_updated_columns()
             insert_data_coinid(data)
