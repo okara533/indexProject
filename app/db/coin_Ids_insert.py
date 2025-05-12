@@ -1,5 +1,6 @@
 import sqlite3
 from app.utils.logger import setup_logger
+from app.utils.helper import check_sqlite_connection
 from app.data.fetcher import pingCoinGeckoAPI,fetchCoinIds
 from dotenv import load_dotenv
 import os
@@ -185,7 +186,6 @@ if __name__ == "__main__":
     if pingCoinGeckoAPI():
         for page in range(1, 5):
             data = fetchCoinIds(page=page)
-            add_created_updated_columns()
             insert_data_coinid(data)
             print(f"Page {page} processed successfully.")
             time.sleep(1)  # Wait for 5 seconds before processing the next page

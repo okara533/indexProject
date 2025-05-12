@@ -1,4 +1,5 @@
 from app.utils.logger import setup_logger
+from app.utils.helper import checkResponse
 import requests
 import time
 from dotenv import load_dotenv
@@ -22,8 +23,7 @@ def pingCoinGeckoAPI():
     }
     try:
         response = requests.get(url, headers=headers)
-        responseCode=response.status_code
-        if responseCode == 200:
+        if checkResponse(response):
             logger.info("Ping successful, API is up and running.")
             return True
         else:
@@ -71,31 +71,33 @@ def histCoinData(coin_id,vs_currency="usd",from_date=None,to_date=None):
     }
     try:
         response = requests.get(url, headers=headers, params=params)
-        data = response.json()
-        logger.info(f"Historical Coin Data fetched successfully: {len(data)}")
+        if checkResponse(response):
+            data = response.json()
+            logger.info(f"Historical Coin Data fetched successfully: {len(data)}")
+            prices_df = pd.DataFrame(data['prices'], columns=['timestamp', 'price'])
+            logger.info(f"Prices DataFrame created: {len(prices_df)}")
 
-        prices_df = pd.DataFrame(data['prices'], columns=['timestamp', 'price'])
-        logger.info(f"Prices DataFrame created: {len(prices_df)}")
+            market_caps_df = pd.DataFrame(data['market_caps'], columns=['timestamp', 'market_cap'])
+            logger.info(f"Market Caps DataFrame created: {len(market_caps_df)}")
 
-        market_caps_df = pd.DataFrame(data['market_caps'], columns=['timestamp', 'market_cap'])
-        logger.info(f"Market Caps DataFrame created: {len(market_caps_df)}")
+            total_volumes_df = pd.DataFrame(data['total_volumes'], columns=['timestamp', 'total_volume'])
+            logger.info(f"Total Volumes DataFrame created: {len(total_volumes_df)}")
 
-        total_volumes_df = pd.DataFrame(data['total_volumes'], columns=['timestamp', 'total_volume'])
-        logger.info(f"Total Volumes DataFrame created: {len(total_volumes_df)}")
+            df = prices_df.merge(market_caps_df, on='timestamp').merge(total_volumes_df, on='timestamp')
+            logger.info(f"Final DataFrame created: {len(df)}")
 
-        df = prices_df.merge(market_caps_df, on='timestamp').merge(total_volumes_df, on='timestamp')
-        logger.info(f"Final DataFrame created: {len(df)}")
-
-        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-        logger.info(f"Timestamps converted to datetime: {len(df)}")
-        df["id"]=coin_id
-        return df
+            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+            logger.info(f"Timestamps converted to datetime: {len(df)}")
+            df["id"]=coin_id
+            return df
+        else:
+            logger.error(f"Response Invalid status code: {response.status_code}")
     except Exception as e:
         logger.error(f"Error fetching Historical Coin Data: {e}")
         return []
 if __name__ == "__main__":
     if pingCoinGeckoAPI():
-        df=histCoinData("bitcoin",vs_currency="usd",from_date="1715367193",to_date="1746903193")
+        df=histCoinData("bitcoin",vs_currency="usd",from_date="1715529885",to_date="1747065885")
         print(df)
     else:
         print("APP--Failed")
