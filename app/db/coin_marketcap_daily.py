@@ -3,16 +3,19 @@ import pandas as pd
 from app.utils.logger import setup_logger
 from app.utils.helper import check_sqlite_connection
 
-from app.data.fetcher import pingCoinGeckoAPI,fetchCoinIds,histCoinData
+from app.data.fetcher import pingCoinGeckoAPI,fetchCoinIds
 import time
+from datetime import date
 
 logger = setup_logger()
 
-def upsert_crypto_data(df: pd.DataFrame, db_path: str = 'data/coindb.db', table_name: str = 'coinGeckoData'):
+def upsert_crypto_data_daily(df: pd.DataFrame, db_path: str = 'data/coindb.db', table_name: str = 'coinGeckoData'):
     # Ensure timestamp column is datetime.date type
     df = df.copy()
-    df['timestamp'] = pd.to_datetime(df['timestamp']).dt.date
-    df=df[["timestamp", "id", "price", "market_cap", "total_volume"]]
+    df['timestamp'] = date.today().strftime("%Y-%m-%d")
+    #turn daily data to coingecko Data table only this secitone updated upsert_crypto_data
+    df=df[["timestamp","id","current_price","market_cap","total_volume"]]
+    df.columns=["date","id","price","market_cap","total_volume"]
     # Connect to sqlite3 database
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
@@ -56,36 +59,16 @@ def upsert_crypto_data(df: pd.DataFrame, db_path: str = 'data/coindb.db', table_
         print(f"Upserted {len(df)} rows into '{table_name}' table.")
     else:
         logger.error("Failed to connect to SQLite database")
-def getCoinId(db_path: str = 'data/coindb.db', table_name: str = 'coins'):
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    if check_sqlite_connection(db_path, table_name):
-        logger.info("Connected to SQLite database: {db_path}")
-        cursor.execute(f"""
-                        select id,market_cap_rank  from {table_name}
-                        order by market_cap_rank asc
-                        """)
-        coin_ids = cursor.fetchall()
-        conn.close()
 
-        return [row[0] for row in coin_ids]
-    else:
-        return []
 if __name__ == "__main__":
-
-
     if pingCoinGeckoAPI():
         #get coids
-        coin_ids = getCoinId()
-        logger.info(f"Found {len(coin_ids)} coins in database.")
-        count = 1
-        for id in coin_ids[:600]:
-            print(count)
+        for page in range(1,5):       
             logger.info(f"Processing coin ID: {id}")
-            data = histCoinData(id,vs_currency="usd",from_date="1715529885",to_date="1747065885")
-            upsert_crypto_data(data)
+            data = fetchCoinIds(page)
+            df=pd.DataFrame(data)
+            upsert_crypto_data_daily(df)
             #print(f"Page {page} processed successfully.")
             time.sleep(2)  # Wait for 5 seconds before processing the next page
-            count += 1
     else:
         print("APP--Failed: CoinGecko API not reachable")
